@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Task, CreateTaskInput, ParsedTaskFields } from '@shared/types/task';
+import type { Task, CreateTaskInput, ParsedTaskFields } from '@shared/types/task';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -42,6 +42,18 @@ export const taskAPI = {
 
   async deleteTask(id: string): Promise<void> {
     await api.delete(`/tasks/${id}`);
+  },
+
+  async transcribeAudio(audioBlob: Blob): Promise<string> {
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'recording.webm');
+
+    const response = await api.post('/voice/transcribe', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data.data.transcript;
   },
 
   async parseVoiceTranscript(transcript: string): Promise<ParsedTaskFields> {

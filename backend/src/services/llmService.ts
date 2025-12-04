@@ -39,7 +39,8 @@ export class LLMService {
     const systemPrompt = `Today's date is ${today}. Extract task details from the user's input.
 Return ONLY valid JSON with this exact structure:
 {
-  "title": "main task description (string or null)",
+  "title": "main task title/summary (string or null)",
+  "description": "additional details or context (string or null)",
   "priority": "Low|Medium|High|Urgent (or null)",
   "dueDate": "ISO 8601 datetime (or null)",
   "status": "To Do|In Progress|Done (or null)"
@@ -51,7 +52,8 @@ Rules:
 - Parse absolute dates like "Jan 15", "15th January" to ISO 8601
 - When parsing relative dates, use today's date (${today}) as reference
 - Extract priority from keywords: "urgent", "high priority", "critical" → High, "low priority" → Low
-- Title should be the main action/task without date/priority keywords
+- Title should be a concise summary of the main action/task
+- Description should capture any additional details, context, or requirements mentioned
 - If you cannot determine a field with confidence, use null
 - Return ONLY the JSON object, no additional text`;
 
@@ -84,6 +86,7 @@ Rules:
 
     return {
       title: parsed.title || null,
+      description: parsed.description || null,
       priority: this.validatePriority(parsed.priority),
       dueDate: parsed.dueDate || null,
       status: this.validateStatus(parsed.status) || "To Do",
@@ -128,6 +131,7 @@ Rules:
 
     return {
       title: title || transcript,
+      description: null,
       priority,
       dueDate,
       status: "To Do",

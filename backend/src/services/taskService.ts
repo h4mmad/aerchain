@@ -1,6 +1,10 @@
-import db from '../utils/database';
-import { Task, CreateTaskInput, UpdateTaskInput } from '../../../shared/types/task';
-import { randomUUID } from 'crypto';
+import db from "../utils/database";
+import {
+  Task,
+  CreateTaskInput,
+  UpdateTaskInput,
+} from "../../../shared/types/task";
+import { randomUUID } from "crypto";
 
 export class TaskService {
   getAllTasks(filters?: {
@@ -8,33 +12,34 @@ export class TaskService {
     priority?: string;
     search?: string;
   }): Task[] {
-    let query = 'SELECT * FROM tasks WHERE 1=1';
+    // 1=1 evaluates to true, so all tasks are returned if no filters applied.
+    let query = "SELECT * FROM tasks WHERE 1=1";
     const params: any[] = [];
 
     if (filters?.status) {
-      query += ' AND status = ?';
+      query += " AND status = ?";
       params.push(filters.status);
     }
 
     if (filters?.priority) {
-      query += ' AND priority = ?';
+      query += " AND priority = ?";
       params.push(filters.priority);
     }
 
     if (filters?.search) {
-      query += ' AND (title LIKE ? OR description LIKE ?)';
+      query += " AND (title LIKE ? OR description LIKE ?)";
       const searchParam = `%${filters.search}%`;
       params.push(searchParam, searchParam);
     }
 
-    query += ' ORDER BY createdAt DESC';
+    query += " ORDER BY createdAt DESC";
 
     const stmt = db.prepare(query);
     return stmt.all(...params) as Task[];
   }
 
   getTaskById(id: string): Task | undefined {
-    const stmt = db.prepare('SELECT * FROM tasks WHERE id = ?');
+    const stmt = db.prepare("SELECT * FROM tasks WHERE id = ?");
     return stmt.get(id) as Task | undefined;
   }
 
@@ -44,8 +49,8 @@ export class TaskService {
       id: randomUUID(),
       title: input.title,
       description: input.description,
-      status: input.status || 'To Do',
-      priority: input.priority || 'Medium',
+      status: input.status || "To Do",
+      priority: input.priority || "Medium",
       dueDate: input.dueDate,
       createdAt: now,
       updatedAt: now,
@@ -100,7 +105,7 @@ export class TaskService {
   }
 
   deleteTask(id: string): boolean {
-    const stmt = db.prepare('DELETE FROM tasks WHERE id = ?');
+    const stmt = db.prepare("DELETE FROM tasks WHERE id = ?");
     const result = stmt.run(id);
     return result.changes > 0;
   }

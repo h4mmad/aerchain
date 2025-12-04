@@ -30,6 +30,7 @@ export interface UpdateTaskInput {
 
 export interface ParsedTaskFields {
   title: string | null;
+  description?: string | null;
   priority: TaskPriority | null;
   dueDate: string | null;
   status: TaskStatus | null;
