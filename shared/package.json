@@ -1,0 +1,11 @@
+{
+  "name": "@task-tracker/shared",
+  "version": "1.0.0",
+  "description": "Shared types for task tracker",
+  "main": "types/task.ts",
+  "types": "types/task.ts",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "MIT"
+}
