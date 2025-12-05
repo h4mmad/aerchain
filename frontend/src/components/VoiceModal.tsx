@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useVoiceRecorder } from '../hooks/useVoiceRecorder';
-import { taskAPI } from '../services/api';
-import type { Task } from '@shared/types/task';
+import { useState, useEffect } from "react";
+import { useVoiceRecorder } from "../hooks/useVoiceRecorder";
+import { taskAPI } from "../services/api";
+import type { Task } from "@shared/types/task";
 
 interface VoiceModalProps {
   isOpen: boolean;
@@ -9,17 +9,21 @@ interface VoiceModalProps {
   onTaskCreated: () => void;
 }
 
-type Step = 'recording' | 'transcribing' | 'reviewing' | 'creating';
+type Step = "recording" | "transcribing" | "reviewing" | "creating";
 
-export default function VoiceModal({ isOpen, onClose, onTaskCreated }: VoiceModalProps) {
-  const [step, setStep] = useState<Step>('recording');
-  const [transcript, setTranscript] = useState('');
-  const [error, setError] = useState('');
+export default function VoiceModal({
+  isOpen,
+  onClose,
+  onTaskCreated,
+}: VoiceModalProps) {
+  const [step, setStep] = useState<Step>("recording");
+  const [transcript, setTranscript] = useState("");
+  const [error, setError] = useState("");
   const [parsedTask, setParsedTask] = useState<Partial<Task>>({
-    title: '',
-    description: '',
-    priority: 'Medium',
-    status: 'To Do',
+    title: "",
+    description: "",
+    priority: "Medium",
+    status: "To Do",
   });
 
   const {
@@ -38,71 +42,73 @@ export default function VoiceModal({ isOpen, onClose, onTaskCreated }: VoiceModa
   }, [isOpen]);
 
   useEffect(() => {
-    if (audioBlob && step === 'recording') {
+    if (audioBlob && step === "recording") {
       handleTranscribe();
     }
   }, [audioBlob]);
 
   const resetState = () => {
-    setStep('recording');
-    setTranscript('');
-    setError('');
+    setStep("recording");
+    setTranscript("");
+    setError("");
     setParsedTask({
-      title: '',
-      description: '',
-      priority: 'Medium',
-      status: 'To Do',
+      title: "",
+      description: "",
+      priority: "Medium",
+      status: "To Do",
     });
     resetRecording();
   };
 
   const handleStartRecording = async () => {
     try {
-      setError('');
+      setError("");
       await startRecording();
     } catch (err) {
-      setError('Failed to access microphone. Please check permissions.');
+      setError("Failed to access microphone. Please check permissions.");
     }
   };
 
   const handleTranscribe = async () => {
     if (!audioBlob) return;
 
-    setStep('transcribing');
+    setStep("transcribing");
     try {
       const transcriptText = await taskAPI.transcribeAudio(audioBlob);
       setTranscript(transcriptText);
 
       const parsed = await taskAPI.parseVoiceTranscript(transcriptText);
       setParsedTask({
-        title: parsed.title || '',
-        description: parsed.description || '',
-        priority: parsed.priority || 'Medium',
-        status: parsed.status || 'To Do',
+        title: parsed.title || "",
+        description: parsed.description || "",
+        priority: parsed.priority || "Medium",
+        status: parsed.status || "To Do",
         dueDate: parsed.dueDate || undefined,
       });
 
-      setStep('reviewing');
+      setStep("reviewing");
     } catch (err) {
-      setError('Failed to process audio. Please try again.');
-      setStep('recording');
+      setError("Failed to process audio. Please try again.");
+      setStep("recording");
     }
   };
 
   const handleCreateTask = async () => {
     if (!parsedTask.title) {
-      setError('Task title is required');
+      setError("Task title is required");
       return;
     }
 
-    setStep('creating');
+    setStep("creating");
     try {
-      await taskAPI.createTask(parsedTask as Omit<Task, 'id' | 'createdAt' | 'updatedAt'>);
+      await taskAPI.createTask(
+        parsedTask as Omit<Task, "id" | "createdAt" | "updatedAt">
+      );
       onTaskCreated();
       onClose();
     } catch (err) {
-      setError('Failed to create task. Please try again.');
-      setStep('reviewing');
+      setError("Failed to create task. Please try again.");
+      setStep("reviewing");
     }
   };
 
@@ -113,14 +119,16 @@ export default function VoiceModal({ isOpen, onClose, onTaskCreated }: VoiceModa
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-[#1a1d2e] rounded-lg shadow-xl max-w-lg w-full mx-4 border border-gray-700">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-2xl max-w-lg w-full mx-4 border border-gray-200">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700">
-          <h2 className="text-lg font-semibold text-white">Create Task with Voice</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Create Task with Voice
+          </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
               <path
@@ -141,7 +149,7 @@ export default function VoiceModal({ isOpen, onClose, onTaskCreated }: VoiceModa
           )}
 
           {/* Recording Step */}
-          {step === 'recording' && (
+          {step === "recording" && (
             <div className="flex flex-col items-center">
               <div className="mb-6">
                 <div className="relative w-32 h-32 flex items-center justify-center">
@@ -149,7 +157,7 @@ export default function VoiceModal({ isOpen, onClose, onTaskCreated }: VoiceModa
                   {isRecording && (
                     <div
                       className="absolute inset-0 bg-purple-600 rounded-full animate-ping opacity-20"
-                      style={{ animationDuration: '1.5s' }}
+                      style={{ animationDuration: "1.5s" }}
                     />
                   )}
 
@@ -157,11 +165,17 @@ export default function VoiceModal({ isOpen, onClose, onTaskCreated }: VoiceModa
                   <div
                     className={`relative w-24 h-24 rounded-full flex items-center justify-center transition-all ${
                       isRecording
-                        ? 'bg-purple-600 scale-110'
-                        : 'bg-gray-700 hover:bg-gray-600'
+                        ? "bg-purple-600 scale-110"
+                        : "bg-gray-200 hover:bg-gray-300"
                     }`}
                   >
-                    <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <svg
+                      className={`w-12 h-12 ${
+                        isRecording ? "text-white" : "text-gray-600"
+                      }`}
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
                       <path
                         fillRule="evenodd"
                         d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z"
@@ -172,30 +186,11 @@ export default function VoiceModal({ isOpen, onClose, onTaskCreated }: VoiceModa
                 </div>
               </div>
 
-              {/* Waveform Visualization */}
-              <div className="w-full mb-6">
-                <div className="flex items-center justify-center gap-1 h-16">
-                  {[...Array(40)].map((_, i) => {
-                    const height = isRecording
-                      ? Math.max(4, audioLevel * 60 * (1 - Math.abs(i - 20) / 20))
-                      : 4;
-                    return (
-                      <div
-                        key={i}
-                        className="w-1 bg-purple-500 rounded-full transition-all duration-75"
-                        style={{
-                          height: `${height}px`,
-                          opacity: isRecording ? 0.8 : 0.2,
-                        }}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-
               {/* Recording Status */}
-              <p className="text-gray-400 text-sm mb-6">
-                {isRecording ? 'Recording... Click stop when done' : 'Click the microphone to start'}
+              <p className="text-gray-600 text-sm mb-6 mt-6">
+                {isRecording
+                  ? "Recording... Click stop when done"
+                  : "Click the microphone to start"}
               </p>
 
               {/* Control Buttons */}
@@ -203,7 +198,7 @@ export default function VoiceModal({ isOpen, onClose, onTaskCreated }: VoiceModa
                 {!isRecording ? (
                   <button
                     onClick={handleStartRecording}
-                    className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium"
+                    className="px-6 py-2 bg-[#FF6B4A] hover:bg-[#E85A3A] text-white rounded-lg transition-colors font-medium"
                   >
                     Start Recording
                   </button>
@@ -220,47 +215,49 @@ export default function VoiceModal({ isOpen, onClose, onTaskCreated }: VoiceModa
           )}
 
           {/* Transcribing Step */}
-          {step === 'transcribing' && (
+          {step === "transcribing" && (
             <div className="flex flex-col items-center py-8">
-              <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4" />
-              <p className="text-gray-400">Processing your voice...</p>
+              <div className="w-12 h-12 border-4 border-[#FF6B4A] border-t-transparent rounded-full animate-spin mb-4" />
+              <p className="text-gray-600">Processing your voice...</p>
             </div>
           )}
 
           {/* Reviewing Step */}
-          {step === 'reviewing' && (
+          {step === "reviewing" && (
             <div>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Transcript
                 </label>
-                <div className="p-3 bg-gray-800/50 border border-gray-700 rounded text-gray-400 text-sm">
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded text-gray-700 text-sm">
                   {transcript}
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Title *
                   </label>
                   <input
                     type="text"
                     value={parsedTask.title}
-                    onChange={(e) => handleFieldChange('title', e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white focus:outline-none focus:border-purple-500"
+                    onChange={(e) => handleFieldChange("title", e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     placeholder="Task title"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Description
                   </label>
                   <textarea
                     value={parsedTask.description}
-                    onChange={(e) => handleFieldChange('description', e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white focus:outline-none focus:border-purple-500 resize-none"
+                    onChange={(e) =>
+                      handleFieldChange("description", e.target.value)
+                    }
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
                     rows={3}
                     placeholder="Task description"
                   />
@@ -268,13 +265,15 @@ export default function VoiceModal({ isOpen, onClose, onTaskCreated }: VoiceModa
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Priority
                     </label>
                     <select
                       value={parsedTask.priority}
-                      onChange={(e) => handleFieldChange('priority', e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white focus:outline-none focus:border-purple-500"
+                      onChange={(e) =>
+                        handleFieldChange("priority", e.target.value)
+                      }
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     >
                       <option value="Low">Low</option>
                       <option value="Medium">Medium</option>
@@ -284,13 +283,15 @@ export default function VoiceModal({ isOpen, onClose, onTaskCreated }: VoiceModa
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Status
                     </label>
                     <select
                       value={parsedTask.status}
-                      onChange={(e) => handleFieldChange('status', e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white focus:outline-none focus:border-purple-500"
+                      onChange={(e) =>
+                        handleFieldChange("status", e.target.value)
+                      }
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     >
                       <option value="To Do">To Do</option>
                       <option value="In Progress">In Progress</option>
@@ -300,14 +301,22 @@ export default function VoiceModal({ isOpen, onClose, onTaskCreated }: VoiceModa
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Due Date
                   </label>
                   <input
                     type="datetime-local"
-                    value={parsedTask.dueDate ? new Date(parsedTask.dueDate).toISOString().slice(0, 16) : ''}
-                    onChange={(e) => handleFieldChange('dueDate', e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white focus:outline-none focus:border-purple-500"
+                    value={
+                      parsedTask.dueDate
+                        ? new Date(parsedTask.dueDate)
+                            .toISOString()
+                            .slice(0, 16)
+                        : ""
+                    }
+                    onChange={(e) =>
+                      handleFieldChange("dueDate", e.target.value)
+                    }
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -317,13 +326,13 @@ export default function VoiceModal({ isOpen, onClose, onTaskCreated }: VoiceModa
                   onClick={() => {
                     resetState();
                   }}
-                  className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                  className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors font-medium"
                 >
                   Record Again
                 </button>
                 <button
                   onClick={handleCreateTask}
-                  className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium"
+                  className="flex-1 px-4 py-2 bg-[#FF6B4A] hover:bg-[#E85A3A] text-white rounded-lg transition-colors font-medium shadow-sm"
                 >
                   Create Task
                 </button>
@@ -332,10 +341,10 @@ export default function VoiceModal({ isOpen, onClose, onTaskCreated }: VoiceModa
           )}
 
           {/* Creating Step */}
-          {step === 'creating' && (
+          {step === "creating" && (
             <div className="flex flex-col items-center py-8">
-              <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4" />
-              <p className="text-gray-400">Creating task...</p>
+              <div className="w-12 h-12 border-4 border-[#FF6B4A] border-t-transparent rounded-full animate-spin mb-4" />
+              <p className="text-gray-600">Creating task...</p>
             </div>
           )}
         </div>
