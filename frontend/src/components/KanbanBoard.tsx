@@ -13,6 +13,7 @@ import TaskModal from "./TaskModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 import BackendStatusIndicator from "./BackendStatusIndicator";
 import FilterBar, { type FilterOptions } from "./FilterBar";
+import TaskListView from "./TaskListView";
 import { useTaskFilters } from "../hooks/useTaskFilters";
 
 type TaskStatus = "To Do" | "In Progress" | "Done";
@@ -26,6 +27,7 @@ const columns: { id: TaskStatus; title: string }[] = [
 export default function KanbanBoard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<"board" | "list">("board");
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -167,6 +169,56 @@ export default function KanbanBoard() {
           <div className="flex items-center gap-4">
             <img src="/aerchain-logo.png" alt="AERCHAIN" className="h-5" />
             <BackendStatusIndicator />
+
+            {/* View Toggle */}
+            <div className="flex items-center gap-2 ml-4">
+              <button
+                onClick={() => setViewMode("board")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === "board"
+                    ? "bg-gray-900 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+                  />
+                </svg>
+                Kanban
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === "list"
+                    ? "bg-gray-900 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 10h16M4 14h16M4 18h16"
+                  />
+                </svg>
+                List
+              </button>
+            </div>
           </div>
 
           <button
@@ -190,78 +242,88 @@ export default function KanbanBoard() {
 
       {/* Main Content */}
       <div className="p-6">
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="grid grid-cols-3 gap-6 max-w-7xl mx-auto">
-            {columns.map((column) => {
-              const columnTasks = getTasksByStatus(column.id);
+        {viewMode === "board" ? (
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <div className="grid grid-cols-3 gap-6 max-w-7xl mx-auto">
+              {columns.map((column) => {
+                const columnTasks = getTasksByStatus(column.id);
 
-              return (
-                <div
-                  key={column.id}
-                  className="flex flex-col bg-white border border-gray-200 rounded-lg p-4"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      {/* <div className={"w-2 h-2 rounded-full " + statusColor} /> */}
-                      <h2 className="text-gray-700 font-semibold text-sm">
-                        {column.title}
-                      </h2>
+                return (
+                  <div
+                    key={column.id}
+                    className="flex flex-col bg-white border border-gray-200 rounded-lg p-4"
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        {/* <div className={"w-2 h-2 rounded-full " + statusColor} /> */}
+                        <h2 className="text-gray-700 font-semibold text-sm">
+                          {column.title}
+                        </h2>
+                      </div>
+                      <span className="bg-gray-200 text-gray-600 text-xs font-medium px-2 py-0.5 rounded">
+                        {getColumnCount(column.id)}
+                      </span>
                     </div>
-                    <span className="bg-gray-200 text-gray-600 text-xs font-medium px-2 py-0.5 rounded">
-                      {getColumnCount(column.id)}
-                    </span>
+
+                    <Droppable droppableId={column.id}>
+                      {(provided, snapshot) => {
+                        const dropStyles = snapshot.isDraggingOver
+                          ? "bg-purple-50 border-2 border-dashed border-purple-300"
+                          : "bg-transparent";
+
+                        return (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            className={
+                              "flex-1 rounded-lg p-2 transition-colors " +
+                              dropStyles
+                            }
+                            style={{ minHeight: "500px" }}
+                          >
+                            {columnTasks.map((task, index) => (
+                              <Draggable
+                                key={task.id}
+                                draggableId={task.id}
+                                index={index}
+                              >
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    className={
+                                      snapshot.isDragging ? "opacity-50" : ""
+                                    }
+                                  >
+                                    <TaskCard
+                                      task={task}
+                                      onEdit={handleEditTask}
+                                      onDelete={handleDeleteTask}
+                                    />
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                          </div>
+                        );
+                      }}
+                    </Droppable>
                   </div>
-
-                  <Droppable droppableId={column.id}>
-                    {(provided, snapshot) => {
-                      const dropStyles = snapshot.isDraggingOver
-                        ? "bg-purple-50 border-2 border-dashed border-purple-300"
-                        : "bg-transparent";
-
-                      return (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                          className={
-                            "flex-1 rounded-lg p-2 transition-colors " +
-                            dropStyles
-                          }
-                          style={{ minHeight: "500px" }}
-                        >
-                          {columnTasks.map((task, index) => (
-                            <Draggable
-                              key={task.id}
-                              draggableId={task.id}
-                              index={index}
-                            >
-                              {(provided, snapshot) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                  className={
-                                    snapshot.isDragging ? "opacity-50" : ""
-                                  }
-                                >
-                                  <TaskCard
-                                    task={task}
-                                    onEdit={handleEditTask}
-                                    onDelete={handleDeleteTask}
-                                  />
-                                </div>
-                              )}
-                            </Draggable>
-                          ))}
-                          {provided.placeholder}
-                        </div>
-                      );
-                    }}
-                  </Droppable>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+          </DragDropContext>
+        ) : (
+          <div className="max-w-7xl mx-auto">
+            <TaskListView
+              tasks={filteredTasks}
+              onEdit={handleEditTask}
+              onDelete={handleDeleteTask}
+            />
           </div>
-        </DragDropContext>
+        )}
       </div>
 
       <VoiceModal

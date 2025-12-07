@@ -7,21 +7,21 @@ interface TaskCardProps {
 }
 
 const priorityColors = {
-  Low: "bg-gray-100",
+  Low: "bg-blue-100",
   Medium: "bg-yellow-100",
   High: "bg-orange-100",
   Urgent: "bg-red-100",
 };
 
 const priorityTextColors = {
-  Low: "text-gray-700",
+  Low: "text-blue-700",
   Medium: "text-yellow-700",
   High: "text-orange-700",
   Urgent: "text-red-700",
 };
 
 const priorityBorderColors = {
-  Low: "border-l-gray-400",
+  Low: "border-l-blue-400",
   Medium: "border-l-yellow-400",
   High: "border-l-orange-400",
   Urgent: "border-l-red-500",

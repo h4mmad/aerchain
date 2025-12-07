@@ -20,7 +20,7 @@ export default function BackendStatusIndicator() {
         }`}
       />
       <span className={isHealthy ? "text-green-600" : "text-red-600"}>
-        {isHealthy ? "Backend Connected" : "Backend Offline"}
+        Backend {isHealthy ? " Online" : " Offline"}
       </span>
     </div>
   );

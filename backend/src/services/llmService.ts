@@ -33,10 +33,11 @@ export class LLMService {
   // The function sends the transcription along with system prompt which state the json structure to return
   // gpt makes sense of text and returns the appropriate json.
   private async parseWithOpenAI(transcript: string): Promise<ParsedTaskFields> {
-    // Get current date for context
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    // Get current datetime with timezone for context
+    const now = new Date();
+    const currentDateTime = now.toISOString(); // Full ISO 8601 with timezone (UTC)
 
-    const systemPrompt = `Today's date is ${today}. Extract task details from the user's input.
+    const systemPrompt = `Current date and time: ${currentDateTime} (UTC). Extract task details from the user's input.
 Return ONLY valid JSON with this exact structure:
 {
   "title": "main task title/summary (string or null)",
@@ -48,9 +49,14 @@ Return ONLY valid JSON with this exact structure:
 
 Rules:
 - Default status to "To Do" if not specified
-- Parse relative dates like "tomorrow", "next Monday", "in 3 days" to ISO 8601
-- Parse absolute dates like "Jan 15", "15th January" to ISO 8601
-- When parsing relative dates, use today's date (${today}) as reference
+- Parse relative dates like "tomorrow", "next Monday", "in 3 days" to ISO 8601 datetime format
+- Parse absolute dates like "Jan 15", "15th January" to ISO 8601 datetime format
+- When parsing relative dates, use the current datetime (${currentDateTime}) as reference
+- IMPORTANT: If a specific time is mentioned (e.g., "5 PM", "3:30", "17:00"), use that EXACT time, not defaults
+- Only use default times when NO specific time is mentioned:
+  - For "morning" without time: default to 09:00:00 UTC
+  - For "evening" without time: default to 18:00:00 UTC
+  - For "afternoon" without time: default to 14:00:00 UTC
 - Extract priority from keywords: "urgent", "high priority", "critical" → High, "low priority" → Low
 - Title should be a concise summary of the main action/task
 - Description should capture any additional details, context, or requirements mentioned
@@ -79,6 +85,7 @@ Rules:
     }
 
     const data: any = await response.json();
+
     const content = data.choices[0].message.content;
 
     // Parse JSON response

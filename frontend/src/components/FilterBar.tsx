@@ -17,7 +17,8 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
-  const [dueDateFilter, setDueDateFilter] = useState<FilterOptions["dueDateFilter"]>("all");
+  const [dueDateFilter, setDueDateFilter] =
+    useState<FilterOptions["dueDateFilter"]>("all");
   const [dueDateFrom, setDueDateFrom] = useState<string>("");
   const [dueDateTo, setDueDateTo] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
@@ -80,8 +81,8 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
       status: selectedStatuses,
       priority: selectedPriorities,
       dueDateFilter: value,
-      dueDateFrom: value === "custom" ? (dueDateFrom || null) : null,
-      dueDateTo: value === "custom" ? (dueDateTo || null) : null,
+      dueDateFrom: value === "custom" ? dueDateFrom || null : null,
+      dueDateTo: value === "custom" ? dueDateTo || null : null,
     });
   };
 
@@ -128,7 +129,11 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
     });
   };
 
-  const hasActiveFilters = searchQuery || selectedStatuses.length > 0 || selectedPriorities.length > 0 || dueDateFilter !== "all";
+  const hasActiveFilters =
+    searchQuery ||
+    selectedStatuses.length > 0 ||
+    selectedPriorities.length > 0 ||
+    dueDateFilter !== "all";
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -195,7 +200,12 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
                 : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
             }`}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -206,7 +216,9 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
             Filters
             {hasActiveFilters && (
               <span className="bg-purple-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-                {(selectedStatuses.length > 0 ? 1 : 0) + (selectedPriorities.length > 0 ? 1 : 0) + (dueDateFilter !== "all" ? 1 : 0)}
+                {(selectedStatuses.length > 0 ? 1 : 0) +
+                  (selectedPriorities.length > 0 ? 1 : 0) +
+                  (dueDateFilter !== "all" ? 1 : 0)}
               </span>
             )}
           </button>
@@ -297,9 +309,11 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
                     Overdue
                   </button>
                 </div>
-                <div className="space-y-2">
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">From</label>
+                <div className="lg:flex lg:flex-row lg:space-x-2 space-y-2">
+                  <div className="flex-1">
+                    <label className="block text-xs text-gray-600 mb-1">
+                      From
+                    </label>
                     <input
                       type="date"
                       value={dueDateFrom}
@@ -307,8 +321,10 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
                       className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">To</label>
+                  <div className="flex-1">
+                    <label className="block text-xs text-gray-600 mb-1">
+                      To
+                    </label>
                     <input
                       type="date"
                       value={dueDateTo}

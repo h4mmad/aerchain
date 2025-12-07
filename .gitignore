@@ -35,6 +35,9 @@ backend/data/*.db-journal
 *.sln
 *.sw?
 
+# Claude Code instructions
+CLAUDE.md
+
 # OS
 .DS_Store
 Thumbs.db

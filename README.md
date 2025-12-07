@@ -61,7 +61,7 @@
 
 ### Key Features
 - Voice-enabled task creation with AI parsing
-- Kanban board with drag-and-drop
+- Dual view modes: Kanban board with drag-and-drop AND list view
 - Advanced filtering (status, priority, due date range, search)
 - Real-time backend status indicator
 - Responsive design
