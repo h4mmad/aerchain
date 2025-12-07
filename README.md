@@ -98,7 +98,6 @@
 ### Voice-Based Task Creation Flow
 
 ```mermaid
-
 sequenceDiagram
     participant User
     participant VoiceModal
@@ -123,19 +122,19 @@ sequenceDiagram
 
     VoiceModal->>VoiceModal: Set step = "transcribing"
     VoiceModal->>Frontend API: processVoiceRecording(audioBlob)
-    Frontend API->>Backend: POST /api/voice/transcribe<br/>(multipart/form-data)
+    Frontend API->>Backend: POST /api/voice/transcribe (multipart/form-data)
 
     Backend->>Whisper API: Transcribe audio
     Whisper API-->>Backend: transcript (text)
 
-    Backend->>GPT API: Parse transcript<br/>(extract task fields)
-    GPT API-->>Backend: parsed fields<br/>(title, priority, status, dueDate)
+    Backend->>GPT API: Parse transcript (extract task fields)
+    GPT API-->>Backend: parsed fields (title, priority, status, dueDate)
 
     Backend-->>Frontend API: { transcript, parsed }
     Frontend API-->>VoiceModal: { transcript, parsed }
 
     VoiceModal->>VoiceModal: Set step = "reviewing"
-    VoiceModal->>User: Display editable form<br/>(transcript + parsed fields)
+    VoiceModal->>User: Display editable form (transcript + parsed fields)
 
     alt User edits and creates
         User->>VoiceModal: Edit fields (optional)
@@ -152,7 +151,6 @@ sequenceDiagram
         User->>VoiceModal: Click "Record Again"
         VoiceModal->>VoiceModal: Reset to Recording step
     end
-
 ```
 
 ### State Flow Diagram
