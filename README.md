@@ -1,24 +1,70 @@
-## 1. Project setup
+## 1. Project Setup
 
 ### Prerequisites
 
-- Node version:
-- DB:
-- ## API keys
-  -
+- Node.js v18 or higher
+- npm or yarn
+- OpenAI API key
 
-### Install steps
+### Install Steps
 
-### How to run everything locally
+1. Clone the repository
+2. Install dependencies for both frontend and backend:
+   ```bash
+   cd frontend && npm install
+   cd ../backend && npm install
+   ```
+
+3. Set up environment variables:
+   - Create `.env` file in the `backend` directory:
+     ```
+     OPENAI_API_KEY=your_openai_api_key_here
+     PORT=5000
+     NODE_ENV=development
+     ```
+
+### How to Run Everything Locally
+
+1. Start the backend server:
+   ```bash
+   cd backend
+   npm run dev
+   ```
+   Server runs on `http://localhost:5000`
+
+2. Start the frontend development server:
+   ```bash
+   cd frontend
+   npm run dev
+   ```
+   Frontend runs on `http://localhost:5173`
 
 ---
 
 ## 2. Tech Stack
 
-- Frontend: React + Vite + Tailwind CSS
-- Backend: Express, SQLite
-- AI: Open AI
-- Key libraries
+### Frontend
+- **Framework**: React 18 with TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS
+- **Drag & Drop**: @hello-pangea/dnd
+- **HTTP Client**: Axios
+
+### Backend
+- **Runtime**: Node.js with Express
+- **Language**: TypeScript
+- **Database**: SQLite with better-sqlite3
+- **File Upload**: Multer
+- **AI Services**:
+  - OpenAI Whisper API (speech-to-text)
+  - OpenAI GPT-3.5-turbo (transcript parsing)
+
+### Key Features
+- Voice-enabled task creation with AI parsing
+- Kanban board with drag-and-drop
+- Advanced filtering (status, priority, due date range, search)
+- Real-time backend status indicator
+- Responsive design
 
 ---
 
@@ -33,8 +79,6 @@
 | Method | Endpoint  | Description         | Request Body | Response                                         |
 | ------ | --------- | ------------------- | ------------ | ------------------------------------------------ |
 | `GET`  | `/health` | Server health check | None         | `{ status: "ok", message: "Server is running" }` |
-
----
 
 ### Task Endpoints (`/api/tasks`)
 
@@ -63,10 +107,9 @@
 
 ### Voice Endpoints (`/api/voice`)
 
-| Method | Endpoint                | Description                                | Request Body                | Response                                                                    |
-| ------ | ----------------------- | ------------------------------------------ | --------------------------- | --------------------------------------------------------------------------- |
-| `POST` | `/api/voice/transcribe` | Transcribe audio + parse task fields       | `FormData: { audio: File }` | `{ success: true, data: { transcript: string, parsed: ParsedTaskFields } }` |
-| `POST` | `/api/voice/parse`      | Parse transcript into task fields (legacy) | `{ transcript: string }`    | `{ success: true, data: { transcript: string, parsed: ParsedTaskFields } }` |
+| Method | Endpoint                | Description                          | Request Body                | Response                                                                    |
+| ------ | ----------------------- | ------------------------------------ | --------------------------- | --------------------------------------------------------------------------- |
+| `POST` | `/api/voice/transcribe` | Transcribe audio + parse task fields | `FormData: { audio: File }` | `{ success: true, data: { transcript: string, parsed: ParsedTaskFields } }` |
 
 ### ParsedTaskFields
 
@@ -82,18 +125,37 @@
 
 ### Notes
 
-- `/api/voice/transcribe` is the primary endpoint for voice task creation (combines transcription + parsing)
-- `/api/voice/parse` is kept for backward compatibility but not actively used in the current frontend
+- `/api/voice/transcribe` combines audio transcription and parsing in a single efficient API call
 - All endpoints return errors in format: `{ success: false, error: string, details?: string }`
 - Audio files must be uploaded as multipart/form-data with field name `"audio"`
+- Supported audio formats: WebM (browser MediaRecorder output)
 
 ---
 
 # 4. Decisions & Assumptions
 
-### Decisions
+### Key Design Decisions
 
-- . Open AI platform used for audio transcription (`whisper-1`) and parsing and understanding (`gpt-3.5-turbo`).
+1. **Single API Call for Voice Processing**: Combined transcription and parsing into one endpoint (`/api/voice/transcribe`) to reduce network overhead and improve user experience.
+
+2. **User Review Before Save**: Parsed task fields are displayed to the user for review and editing before saving, ensuring accuracy and user control.
+
+3. **OpenAI Services**:
+   - Whisper API (`whisper-1`) for reliable speech-to-text transcription
+   - GPT-3.5-turbo for intelligent parsing of natural language into structured task fields
+
+4. **SQLite Database**: Lightweight, serverless database perfect for single-user task management without additional setup.
+
+5. **Client-side Audio Recording**: Audio is recorded in the browser using MediaRecorder API, then sent as WebM blob to minimize data transfer.
+
+6. **Filter Architecture**: Implemented with React hooks and useMemo for optimal performance with multiple filter types (search, status, priority, date range).
+
+### Assumptions
+
+- Single-user application (no authentication/authorization)
+- Tasks are personal and don't require sharing or collaboration
+- OpenAI API key is provided and has sufficient quota
+- Modern browser with MediaRecorder API support
 
 ### Task Creation Flow
 
@@ -114,120 +176,6 @@ flowchart TD
     Review -->|Confirm| Save[Save Task to Database]
     Save --> Refresh[Refresh Task List]
     Refresh --> End([Task Created])
-```
-
-### Voice-Based Task Creation Flow
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant VoiceModal
-    participant useVoiceRecorder
-    participant Frontend API
-    participant Backend
-    participant Whisper API
-    participant GPT API
-    participant Database
-
-    User->>VoiceModal: Click "Create with Voice"
-    VoiceModal->>VoiceModal: Open modal (Recording step)
-
-    User->>VoiceModal: Click "Start Recording"
-    VoiceModal->>useVoiceRecorder: startRecording()
-    useVoiceRecorder->>useVoiceRecorder: Access microphone (Web Audio API)
-    useVoiceRecorder-->>VoiceModal: Recording...
-
-    User->>VoiceModal: Click "Stop Recording"
-    VoiceModal->>useVoiceRecorder: stopRecording()
-    useVoiceRecorder-->>VoiceModal: audioBlob (WebM format)
-
-    VoiceModal->>VoiceModal: Set step = "transcribing"
-    VoiceModal->>Frontend API: processVoiceRecording(audioBlob)
-    Frontend API->>Backend: POST /api/voice/transcribe (multipart/form-data)
-
-    Backend->>Whisper API: Transcribe audio
-    Whisper API-->>Backend: transcript (text)
-
-    Backend->>GPT API: Parse transcript (extract task fields)
-    GPT API-->>Backend: parsed fields (title, priority, status, dueDate)
-
-    Backend-->>Frontend API: { transcript, parsed }
-    Frontend API-->>VoiceModal: { transcript, parsed }
-
-    VoiceModal->>VoiceModal: Set step = "reviewing"
-    VoiceModal->>User: Display editable form (transcript + parsed fields)
-
-    alt User edits and creates
-        User->>VoiceModal: Edit fields (optional)
-        User->>VoiceModal: Click "Create Task"
-        VoiceModal->>VoiceModal: Set step = "creating"
-        VoiceModal->>Frontend API: createTask(taskData)
-        Frontend API->>Backend: POST /api/tasks
-        Backend->>Database: Save task
-        Database-->>Backend: Task created
-        Backend-->>Frontend API: { success: true, data: Task }
-        Frontend API-->>VoiceModal: Task created
-        VoiceModal->>VoiceModal: Close modal & refresh tasks
-    else User wants to re-record
-        User->>VoiceModal: Click "Record Again"
-        VoiceModal->>VoiceModal: Reset to Recording step
-    end
-```
-
-### State Flow Diagram
-
-```mermaid
-stateDiagram-v2
-    [*] --> ModalClosed
-    ModalClosed --> Recording: Click "Create with Voice"
-
-    Recording --> Recording: Start Recording
-    Recording --> Transcribing: Stop Recording
-    Recording --> ModalClosed: Close Modal
-
-    Transcribing --> Reviewing: Success (got transcript + parsed)
-    Transcribing --> Recording: Error (retry)
-
-    Reviewing --> Creating: Click "Create Task"
-    Reviewing --> Recording: Click "Record Again"
-    Reviewing --> ModalClosed: Close Modal
-
-    Creating --> ModalClosed: Success
-    Creating --> Reviewing: Error (retry)
-
-    ModalClosed --> [*]
-
-```
-
-### Component Interaction Flow
-
-```mermaid
-
-flowchart TD
-    A[User] -->|Click| B[KanbanBoard]
-    B -->|Opens| C[VoiceModal]
-    C -->|Uses| D[useVoiceRecorder Hook]
-    D -->|Captures| E[Audio Blob]
-
-    E -->|Sends to| F[Frontend API<br/>processVoiceRecording]
-    F -->|POST /api/voice/transcribe| G[Backend Controller]
-
-    G -->|Transcribe| H[SpeechToTextService<br/>OpenAI Whisper]
-    H -->|Returns| I[Transcript Text]
-
-    I -->|Parse| J[LLMService<br/>OpenAI GPT]
-    J -->|Returns| K[Parsed Task Fields]
-
-    K -->|Combined Response| F
-    F -->|Updates| C
-
-    C -->|Shows| L[Review Form]
-    L -->|User confirms| M[Create Task]
-    M -->|POST /api/tasks| N[TaskController]
-    N -->|Saves| O[Database<br/>SQLite]
-    O -->|Success| P[Refresh Task List]
-    P -->|Updates| B
-
 ```
 
 ### Data Flow Architecture
@@ -258,49 +206,47 @@ graph LR
 
 ```
 
-### Manual Task Creation Flow (Edit Existing)
-
-```mermaid
-
-sequenceDiagram
-    participant User
-    participant KanbanBoard
-    participant TaskCard
-    participant TaskModal
-    participant Backend
-    participant Database
-
-    User->>TaskCard: Click on task
-    TaskCard->>KanbanBoard: handleEditTask(task)
-    KanbanBoard->>TaskModal: Open with editingTask data
-    TaskModal->>User: Display pre-filled form
-
-    User->>TaskModal: Edit fields
-    User->>TaskModal: Click "Save"
-
-    TaskModal->>Backend: PUT /api/tasks/:id
-    Backend->>Database: Update task
-    Database-->>Backend: Updated task
-    Backend-->>TaskModal: { success: true, data: Task }
-
-    TaskModal->>KanbanBoard: Refresh tasks
-    KanbanBoard->>Backend: GET /api/tasks
-    Backend->>Database: Fetch all tasks
-    Database-->>Backend: Task list
-    Backend-->>KanbanBoard: Tasks
-    KanbanBoard->>User: Display updated board
-
-```
-
 ---
 
-## 5. AI tools usage
+## 5. AI Tools Usage
 
-- Claude code was used while building, for boilerplate, logic flow and system design ideas back and forth.
+### Development Process
 
-- Prompt Approach
+Claude Code was extensively used throughout development for:
+- Project architecture and system design
+- Boilerplate generation for components and API endpoints
+- Logic flow optimization and best practices
+- Bug identification and resolution
+- Code refactoring and improvements
 
-  - 'I think audio should be recorded at the user device first and then sent to backend for transcription and parsing. What do you think of this approach? Any suggestions?'
-  - 'I think a single api call to transcribe + parse should be made as it is more efficient? User can review the parsed output in the modal and then create task using another call. Suggestion?'
+### Key Collaborative Prompts
 
-- A lot of code needs review before accepting. However it can explain the code it is suggesting which makes it easier to review.
+1. **Architecture Discussion**:
+   - "I think audio should be recorded at the user device first and then sent to backend for transcription and parsing. What do you think of this approach? Any suggestions?"
+   - Result: Implemented client-side recording with browser MediaRecorder API
+
+2. **API Optimization**:
+   - "I think a single api call to transcribe + parse should be made as it is more efficient? User can review the parsed output in the modal and then create task using another call. Suggestion?"
+   - Result: Combined transcription and parsing into single `/api/voice/transcribe` endpoint
+
+3. **Feature Implementation**:
+   - "Implement filter and search, filter tasks by status, priority, or due date / Search tasks by title or description"
+   - Result: Comprehensive filter system with search, multi-select filters, and date range picker
+
+4. **Code Quality**:
+   - "Which functions are not used in the codebase?"
+   - Result: Identified and removed unused code for cleaner codebase
+
+### OpenAI Integration
+
+- **Whisper API**: Converts voice recordings to text with high accuracy
+- **GPT-3.5-turbo**: Parses natural language transcripts into structured task data (title, description, priority, status, due date)
+
+### LLM Parsing Strategy
+
+The system uses a structured prompt to extract task fields:
+- Handles relative dates ("tomorrow", "next Monday", "in 3 days")
+- Extracts priority keywords ("urgent", "high priority")
+- Defaults status to "To Do" unless specified
+- Returns null for unparseable fields
+- Preserves raw transcript for user reference and editing

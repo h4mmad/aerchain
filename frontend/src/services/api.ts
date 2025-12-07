@@ -58,10 +58,4 @@ export const taskAPI = {
       parsed: response.data.data.parsed,
     };
   },
-
-  // Kept for backward compatibility if needed elsewhere
-  async parseVoiceTranscript(transcript: string): Promise<ParsedTaskFields> {
-    const response = await api.post('/voice/parse', { transcript });
-    return response.data.data.parsed;
-  },
 };

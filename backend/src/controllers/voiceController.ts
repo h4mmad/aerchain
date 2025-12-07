@@ -70,31 +70,3 @@ export const processVoiceRecording = async (
   }
 };
 
-export const parseVoiceTranscript = async (req: Request, res: Response) => {
-  try {
-    const { transcript } = req.body;
-
-    if (!transcript || transcript.trim() === "") {
-      return res
-        .status(400)
-        .json({ success: false, error: "Transcript is required" });
-    }
-
-    const parsed = await getLLMService().parseTranscript(transcript);
-
-    res.json({
-      success: true,
-      data: {
-        transcript,
-        parsed,
-      },
-    });
-  } catch (error) {
-    console.error("Error parsing transcript:", error);
-    res.status(500).json({
-      success: false,
-      error: "Failed to parse transcript",
-      details: error instanceof Error ? error.message : "Unknown error",
-    });
-  }
-};
