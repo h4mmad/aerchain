@@ -10,6 +10,7 @@
 
 1. Clone the repository
 2. Install dependencies for both frontend and backend:
+
    ```bash
    cd frontend && npm install
    cd ../backend && npm install
@@ -26,10 +27,12 @@
 ### How to Run Everything Locally
 
 1. Start the backend server:
+
    ```bash
    cd backend
    npm run dev
    ```
+
    Server runs on `http://localhost:5000`
 
 2. Start the frontend development server:
@@ -44,6 +47,7 @@
 ## 2. Tech Stack
 
 ### Frontend
+
 - **Framework**: React 18 with TypeScript
 - **Build Tool**: Vite
 - **Styling**: Tailwind CSS
@@ -51,6 +55,7 @@
 - **HTTP Client**: Axios
 
 ### Backend
+
 - **Runtime**: Node.js with Express
 - **Language**: TypeScript
 - **Database**: SQLite with better-sqlite3
@@ -60,6 +65,7 @@
   - OpenAI GPT-3.5-turbo (transcript parsing)
 
 ### Key Features
+
 - Voice-enabled task creation with AI parsing
 - Dual view modes: Kanban board with drag-and-drop AND list view
 - Advanced filtering (status, priority, due date range, search)
@@ -141,6 +147,7 @@
 2. **User Review Before Save**: Parsed task fields are displayed to the user for review and editing before saving, ensuring accuracy and user control.
 
 3. **OpenAI Services**:
+
    - Whisper API (`whisper-1`) for reliable speech-to-text transcription
    - GPT-3.5-turbo for intelligent parsing of natural language into structured task fields
 
@@ -213,6 +220,7 @@ graph LR
 ### Development Process
 
 Claude Code was extensively used throughout development for:
+
 - Project architecture and system design
 - Boilerplate generation for components and API endpoints
 - Logic flow optimization and best practices
@@ -222,14 +230,17 @@ Claude Code was extensively used throughout development for:
 ### Key Collaborative Prompts
 
 1. **Architecture Discussion**:
+
    - "I think audio should be recorded at the user device first and then sent to backend for transcription and parsing. What do you think of this approach? Any suggestions?"
    - Result: Implemented client-side recording with browser MediaRecorder API
 
 2. **API Optimization**:
+
    - "I think a single api call to transcribe + parse should be made as it is more efficient? User can review the parsed output in the modal and then create task using another call. Suggestion?"
    - Result: Combined transcription and parsing into single `/api/voice/transcribe` endpoint
 
 3. **Feature Implementation**:
+
    - "Implement filter and search, filter tasks by status, priority, or due date / Search tasks by title or description"
    - Result: Comprehensive filter system with search, multi-select filters, and date range picker
 
@@ -245,6 +256,7 @@ Claude Code was extensively used throughout development for:
 ### LLM Parsing Strategy
 
 The system uses a structured prompt to extract task fields:
+
 - Handles relative dates ("tomorrow", "next Monday", "in 3 days")
 - Extracts priority keywords ("urgent", "high priority")
 - Defaults status to "To Do" unless specified
@@ -261,6 +273,7 @@ The system uses a structured prompt to extract task fields:
 During development, a critical timezone bug was discovered where voice-created tasks with specific times (e.g., "tomorrow 6 PM") were being stored incorrectly.
 
 **Root Cause:**
+
 - Backend was using UTC time as reference for LLM date parsing
 - LLM interpreted "6 PM" as 6 PM UTC, regardless of user's actual timezone
 - Frontend displayed times without timezone conversion
@@ -275,18 +288,24 @@ The frontend wasn't converting UTC times to local timezone for display, so users
 **Solution Implemented:**
 
 1. **Frontend sends user timezone** ([api.ts](frontend/src/services/api.ts)):
+
    ```typescript
    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-   formData.append('timezone', userTimezone); // e.g., "Asia/Kolkata"
+   formData.append("timezone", userTimezone); // e.g., "Asia/Kolkata"
    ```
 
 2. **Backend receives and uses timezone** ([voiceController.ts](backend/src/controllers/voiceController.ts)):
+
    ```typescript
    const userTimezone = req.body.timezone || "UTC";
-   const parsed = await getLLMService().parseTranscript(transcript, userTimezone);
+   const parsed = await getLLMService().parseTranscript(
+     transcript,
+     userTimezone
+   );
    ```
 
 3. **LLM interprets times in user's timezone** ([llmService.ts](backend/src/services/llmService.ts)):
+
    - System prompt now includes: `"User's timezone: ${userTimezone}"`
    - Instructions to interpret spoken times in user's timezone and convert to UTC
    - Example: "6 PM" in Kolkata → stores as `12:30:00.000Z` (UTC)
@@ -296,14 +315,15 @@ The frontend wasn't converting UTC times to local timezone for display, so users
    const timeStr = date.toLocaleTimeString("en-US", {
      hour: "numeric",
      minute: "2-digit",
-     hour12: true
+     hour12: true,
    }); // Automatically converts UTC to local timezone
    ```
 
 **Result:**
+
 - User in Kolkata says "tomorrow 6 PM"
 - Stored as: `2025-12-08T12:30:00.000Z` (6 PM Kolkata = 12:30 PM UTC)
 - Displays as: "Dec 8, 6:00 PM" (correctly converted back to Kolkata time)
 
-**Migration Note:**
-Tasks created before this fix may show incorrect times (5.5 hours off for Kolkata users). Users can edit these tasks to correct the due dates.
+**Note:**
+Tasks created before this fix may show incorrect times.
