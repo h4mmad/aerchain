@@ -48,6 +48,10 @@ export const taskAPI = {
     const formData = new FormData();
     formData.append('audio', audioBlob, 'recording.webm');
 
+    // Get user's timezone and send it with the request
+    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    formData.append('timezone', userTimezone);
+
     const response = await api.post('/voice/transcribe', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',

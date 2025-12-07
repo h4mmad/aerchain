@@ -37,6 +37,9 @@ export const processVoiceRecording = async (
     const audioBuffer = req.file.buffer;
     const filename = req.file.originalname || "audio.webm";
 
+    // Get user's timezone from request body (sent as form data)
+    const userTimezone = req.body.timezone || "UTC";
+
     // Transcribe the audio
     const transcript = await getSpeechToTextService().transcribe(
       audioBuffer,
@@ -50,8 +53,8 @@ export const processVoiceRecording = async (
       });
     }
 
-    // Parse the transcript immediately
-    const parsed = await getLLMService().parseTranscript(transcript);
+    // Parse the transcript immediately with user's timezone
+    const parsed = await getLLMService().parseTranscript(transcript, userTimezone);
 
     res.json({
       success: true,

@@ -19,45 +19,62 @@ export class LLMService {
     }
   }
 
-  async parseTranscript(transcript: string): Promise<ParsedTaskFields> {
+  async parseTranscript(transcript: string, userTimezone: string = "UTC"): Promise<ParsedTaskFields> {
     try {
-      return await this.parseWithOpenAI(transcript);
+      return await this.parseWithOpenAI(transcript, userTimezone);
     } catch (error) {
       console.error("LLM parsing error:", error);
       // Fallback to basic parsing
-      return this.fallbackParse(transcript);
+      return this.fallbackParse(transcript, userTimezone);
     }
   }
 
   // The transcript transcribed by whisper ai is fed to this function
   // The function sends the transcription along with system prompt which state the json structure to return
   // gpt makes sense of text and returns the appropriate json.
-  private async parseWithOpenAI(transcript: string): Promise<ParsedTaskFields> {
-    // Get current datetime with timezone for context
+  private async parseWithOpenAI(transcript: string, userTimezone: string): Promise<ParsedTaskFields> {
+    // Get current datetime in user's timezone for context
     const now = new Date();
-    const currentDateTime = now.toISOString(); // Full ISO 8601 with timezone (UTC)
+    const currentDateTimeUTC = now.toISOString(); // Full ISO 8601 in UTC
 
-    const systemPrompt = `Current date and time: ${currentDateTime} (UTC). Extract task details from the user's input.
+    // Format current time in user's timezone for display
+    const currentDateTimeLocal = now.toLocaleString("en-US", {
+      timeZone: userTimezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+
+    const systemPrompt = `Current date and time: ${currentDateTimeLocal} in timezone ${userTimezone} (which is ${currentDateTimeUTC} in UTC).
+User's timezone: ${userTimezone}
+
+Extract task details from the user's input.
 Return ONLY valid JSON with this exact structure:
 {
   "title": "main task title/summary (string or null)",
   "description": "additional details or context (string or null)",
-  "priority": "Low|Medium|High|Urgent (or null)",
+  "priority": "Low|Medium|High|Urgent",
   "dueDate": "ISO 8601 datetime (or null)",
   "status": "To Do|In Progress|Done (or null)"
 }
 
 Rules:
 - Default status to "To Do" if not specified
-- Parse relative dates like "tomorrow", "next Monday", "in 3 days" to ISO 8601 datetime format
-- Parse absolute dates like "Jan 15", "15th January" to ISO 8601 datetime format
-- When parsing relative dates, use the current datetime (${currentDateTime}) as reference
-- IMPORTANT: If a specific time is mentioned (e.g., "5 PM", "3:30", "17:00"), use that EXACT time, not defaults
+- Parse relative dates like "tomorrow", "next Monday", "in 3 days" to ISO 8601 datetime format in UTC
+- Parse absolute dates like "Jan 15", "15th January" to ISO 8601 datetime format in UTC
+- IMPORTANT: When user mentions a time (e.g., "tomorrow 6 PM", "next Monday 3:30"), interpret that time in their timezone (${userTimezone})
+- Convert the interpreted datetime to UTC format before returning
+- For example: If user in timezone ${userTimezone} says "tomorrow 6 PM", calculate 6 PM tomorrow in ${userTimezone} and convert to UTC
+- IMPORTANT: If a specific time is mentioned (e.g., "5 PM", "3:30", "17:00"), use that EXACT time in the user's timezone, not defaults
 - Only use default times when NO specific time is mentioned:
-  - For "morning" without time: default to 09:00:00 UTC
-  - For "evening" without time: default to 18:00:00 UTC
-  - For "afternoon" without time: default to 14:00:00 UTC
-- Extract priority from keywords: "urgent", "high priority", "critical" → High, "low priority" → Low
+  - For "morning" without time: default to 09:00:00 in user's timezone
+  - For "evening" without time: default to 18:00:00 in user's timezone
+  - For "afternoon" without time: default to 14:00:00 in user's timezone
+- Extract priority from keywords
 - Title should be a concise summary of the main action/task
 - Description should capture any additional details, context, or requirements mentioned
 - If you cannot determine a field with confidence, use null
@@ -100,7 +117,7 @@ Rules:
     };
   }
 
-  private fallbackParse(transcript: string): ParsedTaskFields {
+  private fallbackParse(transcript: string, userTimezone: string = "UTC"): ParsedTaskFields {
     // Basic keyword-based parsing as fallback
     const lowerTranscript = transcript.toLowerCase();
 

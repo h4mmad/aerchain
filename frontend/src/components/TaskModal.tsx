@@ -40,7 +40,26 @@ export default function TaskModal({ isOpen, onClose, onSave, task }: TaskModalPr
   }, [task, isOpen]);
 
   const handleFieldChange = (field: keyof Task, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field === 'dueDate' && value) {
+      // Convert from datetime-local (local time) to ISO string (UTC)
+      const localDate = new Date(value);
+      setFormData((prev) => ({ ...prev, [field]: localDate.toISOString() }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    }
+  };
+
+  // Helper function to convert UTC ISO string to datetime-local format
+  const toDatetimeLocalValue = (isoString?: string) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    // Get local date/time components
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
   const handleSave = () => {
@@ -151,7 +170,7 @@ export default function TaskModal({ isOpen, onClose, onSave, task }: TaskModalPr
               </label>
               <input
                 type="datetime-local"
-                value={formData.dueDate ? new Date(formData.dueDate).toISOString().slice(0, 16) : ''}
+                value={toDatetimeLocalValue(formData.dueDate)}
                 onChange={(e) => handleFieldChange('dueDate', e.target.value)}
                 className="w-full px-3 py-2 bg-white border border-gray-300 rounded text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />

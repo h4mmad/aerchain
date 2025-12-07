@@ -250,3 +250,60 @@ The system uses a structured prompt to extract task fields:
 - Defaults status to "To Do" unless specified
 - Returns null for unparseable fields
 - Preserves raw transcript for user reference and editing
+
+---
+
+## 6. Known Issues & Solutions
+
+### Timezone Handling Bug Discovery
+
+**Problem Identified:**
+During development, a critical timezone bug was discovered where voice-created tasks with specific times (e.g., "tomorrow 6 PM") were being stored incorrectly.
+
+**Root Cause:**
+- Backend was using UTC time as reference for LLM date parsing
+- LLM interpreted "6 PM" as 6 PM UTC, regardless of user's actual timezone
+- Frontend displayed times without timezone conversion
+- For a user in Kolkata (UTC+5:30) saying "tomorrow 6 PM":
+  - **Stored**: `2025-12-08T18:00:00.000Z` (6 PM UTC)
+  - **Actually means**: 11:30 PM Kolkata time
+  - **Frontend showed**: "6 PM" (misleadingly appeared correct)
+
+**The Bug Was Masked:**
+The frontend wasn't converting UTC times to local timezone for display, so users saw the time they spoke (e.g., "6 PM") but didn't realize it was stored for a different timezone entirely.
+
+**Solution Implemented:**
+
+1. **Frontend sends user timezone** ([api.ts](frontend/src/services/api.ts)):
+   ```typescript
+   const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+   formData.append('timezone', userTimezone); // e.g., "Asia/Kolkata"
+   ```
+
+2. **Backend receives and uses timezone** ([voiceController.ts](backend/src/controllers/voiceController.ts)):
+   ```typescript
+   const userTimezone = req.body.timezone || "UTC";
+   const parsed = await getLLMService().parseTranscript(transcript, userTimezone);
+   ```
+
+3. **LLM interprets times in user's timezone** ([llmService.ts](backend/src/services/llmService.ts)):
+   - System prompt now includes: `"User's timezone: ${userTimezone}"`
+   - Instructions to interpret spoken times in user's timezone and convert to UTC
+   - Example: "6 PM" in Kolkata → stores as `12:30:00.000Z` (UTC)
+
+4. **Frontend displays times in local timezone** ([TaskCard.tsx](frontend/src/components/TaskCard.tsx)):
+   ```typescript
+   const timeStr = date.toLocaleTimeString("en-US", {
+     hour: "numeric",
+     minute: "2-digit",
+     hour12: true
+   }); // Automatically converts UTC to local timezone
+   ```
+
+**Result:**
+- User in Kolkata says "tomorrow 6 PM"
+- Stored as: `2025-12-08T12:30:00.000Z` (6 PM Kolkata = 12:30 PM UTC)
+- Displays as: "Dec 8, 6:00 PM" (correctly converted back to Kolkata time)
+
+**Migration Note:**
+Tasks created before this fix may show incorrect times (5.5 hours off for Kolkata users). Users can edit these tasks to correct the due dates.

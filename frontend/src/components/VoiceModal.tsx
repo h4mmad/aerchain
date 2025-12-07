@@ -111,7 +111,26 @@ export default function VoiceModal({
   };
 
   const handleFieldChange = (field: keyof Task, value: string) => {
-    setParsedTask((prev) => ({ ...prev, [field]: value }));
+    if (field === 'dueDate' && value) {
+      // Convert from datetime-local (local time) to ISO string (UTC)
+      const localDate = new Date(value);
+      setParsedTask((prev) => ({ ...prev, [field]: localDate.toISOString() }));
+    } else {
+      setParsedTask((prev) => ({ ...prev, [field]: value }));
+    }
+  };
+
+  // Helper function to convert UTC ISO string to datetime-local format
+  const toDatetimeLocalValue = (isoString?: string) => {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    // Get local date/time components
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
   if (!isOpen) return null;
@@ -304,13 +323,7 @@ export default function VoiceModal({
                   </label>
                   <input
                     type="datetime-local"
-                    value={
-                      parsedTask.dueDate
-                        ? new Date(parsedTask.dueDate)
-                            .toISOString()
-                            .slice(0, 16)
-                        : ""
-                    }
+                    value={toDatetimeLocalValue(parsedTask.dueDate)}
                     onChange={(e) =>
                       handleFieldChange("dueDate", e.target.value)
                     }

@@ -31,7 +31,19 @@ export default function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
   const formatDate = (dateString?: string) => {
     if (!dateString) return null;
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+    // Format date with time in user's local timezone
+    const dateStr = date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric"
+    });
+    const timeStr = date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true
+    });
+
+    return `${dateStr}, ${timeStr}`;
   };
 
   const handleEdit = (e: React.MouseEvent) => {
