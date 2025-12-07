@@ -29,7 +29,6 @@ export default function VoiceModal({
   const {
     isRecording,
     audioBlob,
-    audioLevel,
     startRecording,
     stopRecording,
     resetRecording,
@@ -74,16 +73,15 @@ export default function VoiceModal({
 
     setStep("transcribing");
     try {
-      const transcriptText = await taskAPI.transcribeAudio(audioBlob);
-      setTranscript(transcriptText);
+      const result = await taskAPI.processVoiceRecording(audioBlob);
 
-      const parsed = await taskAPI.parseVoiceTranscript(transcriptText);
+      setTranscript(result.transcript);
       setParsedTask({
-        title: parsed.title || "",
-        description: parsed.description || "",
-        priority: parsed.priority || "Medium",
-        status: parsed.status || "To Do",
-        dueDate: parsed.dueDate || undefined,
+        title: result.parsed.title || "",
+        description: result.parsed.description || "",
+        priority: result.parsed.priority || "Medium",
+        status: result.parsed.status || "To Do",
+        dueDate: result.parsed.dueDate || undefined,
       });
 
       setStep("reviewing");

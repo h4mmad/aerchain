@@ -44,7 +44,7 @@ export const taskAPI = {
     await api.delete(`/tasks/${id}`);
   },
 
-  async transcribeAudio(audioBlob: Blob): Promise<string> {
+  async processVoiceRecording(audioBlob: Blob): Promise<{ transcript: string; parsed: ParsedTaskFields }> {
     const formData = new FormData();
     formData.append('audio', audioBlob, 'recording.webm');
 
@@ -53,9 +53,13 @@ export const taskAPI = {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data.data.transcript;
+    return {
+      transcript: response.data.data.transcript,
+      parsed: response.data.data.parsed,
+    };
   },
 
+  // Kept for backward compatibility if needed elsewhere
   async parseVoiceTranscript(transcript: string): Promise<ParsedTaskFields> {
     const response = await api.post('/voice/parse', { transcript });
     return response.data.data.parsed;

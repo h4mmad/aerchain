@@ -50,10 +50,14 @@ export const processVoiceRecording = async (
       });
     }
 
+    // Parse the transcript immediately
+    const parsed = await getLLMService().parseTranscript(transcript);
+
     res.json({
       success: true,
       data: {
         transcript,
+        parsed,
       },
     });
   } catch (error) {

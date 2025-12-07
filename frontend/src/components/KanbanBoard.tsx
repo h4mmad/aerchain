@@ -12,6 +12,8 @@ import VoiceModal from "./VoiceModal";
 import TaskModal from "./TaskModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 import BackendStatusIndicator from "./BackendStatusIndicator";
+import FilterBar, { type FilterOptions } from "./FilterBar";
+import { useTaskFilters } from "../hooks/useTaskFilters";
 
 type TaskStatus = "To Do" | "In Progress" | "Done";
 
@@ -29,6 +31,16 @@ export default function KanbanBoard() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+  const [filters, setFilters] = useState<FilterOptions>({
+    searchQuery: "",
+    status: [],
+    priority: [],
+    dueDateFilter: "all",
+    dueDateFrom: null,
+    dueDateTo: null,
+  });
+
+  const filteredTasks = useTaskFilters(tasks, filters);
 
   useEffect(() => {
     loadTasks();
@@ -79,7 +91,7 @@ export default function KanbanBoard() {
   };
 
   const getTasksByStatus = (status: TaskStatus) => {
-    return tasks.filter((task) => task.status === status);
+    return filteredTasks.filter((task) => task.status === status);
   };
 
   const getColumnCount = (status: TaskStatus) => {
@@ -151,7 +163,7 @@ export default function KanbanBoard() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="border-b border-gray-200 bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto  py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <img src="/aerchain-logo.png" alt="AERCHAIN" className="h-5" />
             <BackendStatusIndicator />
@@ -173,18 +185,15 @@ export default function KanbanBoard() {
         </div>
       </header>
 
+      {/* Filter Bar */}
+      <FilterBar onFilterChange={setFilters} />
+
       {/* Main Content */}
       <div className="p-6">
         <DragDropContext onDragEnd={handleDragEnd}>
           <div className="grid grid-cols-3 gap-6 max-w-7xl mx-auto">
             {columns.map((column) => {
               const columnTasks = getTasksByStatus(column.id);
-              const statusColor =
-                column.id === "To Do"
-                  ? "bg-gray-400"
-                  : column.id === "In Progress"
-                  ? "bg-yellow-500"
-                  : "bg-green-500";
 
               return (
                 <div
